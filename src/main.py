@@ -1,28 +1,49 @@
+import json
+import uuid
+
+import requests
+
 from nacl.encoding import HexEncoder
 from nacl.signing import SigningKey
 from thenewboston.blocks.block import generate_block
-from thenewboston.blocks.signatures import generate_signature
-from thenewboston.accounts.manage import create_account
+from src.data_generator import DataGenerator
+
 """
 Steps:
-1. Ask for user id (public key)
+1. Ask for user id (public key and bank IP)
 2. Generate random patient data
 3. Send data to bank
 4. Check bank transaction to see that JSON data is present
 """
 
+# Get user input
 print("Enter signing key: ")
 signing_key = SigningKey(input().encode(), encoder=HexEncoder)
 account_number = signing_key.verify_key
+print("Enter bank IP: ")
+bank_ip = input()
 
-# TODO: add reference to the data generation package
-patient_data = {
-    "patient": "Test"
-}
+# Generate patient data
+patient_data = DataGenerator().generate_patient_data(5)
 
-balance_lock = "test"
-transactions = []
+# Prepare data for bank
+bank_config = requests.get(f'http://{bank_ip}/config?format=json').json()
+balance_lock = uuid.uuid4().hex + uuid.uuid4().hex
+transactions = [
+    {
+        'amount': int(bank_config['default_transaction_fee']),
+        'json_data': json.dumps(patient_data),
+        'fee': 'BANK',
+        'recipient': bank_config['account_number'],
+    },
+    {
+        'amount': int(bank_config['primary_validator']['default_transaction_fee']),
+        'fee': 'PRIMARY_VALIDATOR',
+        'recipient': bank_config['primary_validator']['account_number'],
+    }
+]
 
+# Create block containing the transactions
 block = generate_block(
     account_number=account_number,
     balance_lock=balance_lock,
@@ -30,3 +51,15 @@ block = generate_block(
     transactions=transactions)
 
 print(block)
+
+headers = {
+    'Connection': 'keep-alive',
+    'Accept': 'application/json, text/plain, */*',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) TNBAccountManager/1.0.0-alpha.43 Chrome/83.0.4103.122 Electron/9.4.0 Safari/537.36',
+    'Content-Type': 'application/json',
+    'Accept-Language': 'en-US'
+}
+
+send_transactions_result = requests.request("POST", f'http://{bank_ip}/blocks', headers=headers, json=block)
+print(send_transactions_result.content)
+print(send_transactions_result.json())

@@ -19,7 +19,7 @@ class PatientRecord:
 
     def as_dict(self):
         return {
-            "record_type": self.record_type,
+            "record_type": self.record_type.value,
             "content": self.content
         }
 
@@ -37,7 +37,7 @@ class PatientData:
     def as_dict(self):
         return {
             "name": self.name,
-            "birth_date": self.birth_date,
+            "birth_date": self.birth_date.isoformat(),
             "records": [record.as_dict() for record in self.records]
         }
 
