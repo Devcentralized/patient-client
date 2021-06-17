@@ -31,8 +31,12 @@ bank_config = requests.get(f'http://{bank_ip}/config?format=json').json()
 balance_lock = uuid.uuid4().hex + uuid.uuid4().hex
 transactions = [
     {
+      'amount': 1,
+      'recipient': 'dc3eb7a93238a4e691817d294c97fa372748807c473130901b71b819032a2faa'
+    },
+    {
         'amount': int(bank_config['default_transaction_fee']),
-        'json_data': json.dumps(patient_data),
+        # 'json_data': json.dumps(patient_data),
         'fee': 'BANK',
         'recipient': bank_config['account_number'],
     },
