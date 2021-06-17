@@ -1,1 +1,2 @@
 thenewboston-ml-dev==0.2.3
+Faker~=8.8.0
