@@ -28,7 +28,10 @@ patient_data = DataGenerator().generate_patient_data(5)
 
 # Prepare data for bank
 bank_config = requests.get(f'http://{bank_ip}/config?format=json').json()
-balance_lock = uuid.uuid4().hex + uuid.uuid4().hex
+validator_ip = bank_config["primary_validator"]["ip_address"]
+balance_lock = requests.get(f"http://{validator_ip}/accounts/{account_number.encode(encoder=HexEncoder).decode('UTF-8')}/balance_lock?format=json").json()["balance_lock"]
+
+
 transactions = [
     {
       'amount': 1,
@@ -65,5 +68,4 @@ headers = {
 }
 
 send_transactions_result = requests.request("POST", f'http://{bank_ip}/blocks', headers=headers, json=block)
-print(send_transactions_result.content)
 print(send_transactions_result.json())
